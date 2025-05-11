@@ -1,0 +1,94 @@
+{
+  "name": "tts-service",
+  "version": "1.0.0",
+  "description": "腾讯云TTS文本转语音服务",
+  "author": "MCP服务团队",
+  "license": "MIT",
+  "main": "app.py",
+  "api": {
+    "endpoints": [
+      {
+        "path": "/api/tts",
+        "method": "POST",
+        "description": "将文本转换为语音",
+        "parameters": [
+          {
+            "name": "text",
+            "type": "string",
+            "required": true,
+            "description": "需要转换为语音的文本内容"
+          },
+          {
+            "name": "voice_type",
+            "type": "string",
+            "required": false,
+            "default": "1001",
+            "description": "语音音色ID，默认为1001(智瑜)"
+          },
+          {
+            "name": "emotion",
+            "type": "string",
+            "required": false,
+            "default": "neutral",
+            "description": "情感类型，仅适用于情感音色(1017,1018)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回音频数据",
+            "content": "audio/mp3"
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": "application/json"
+          },
+          "500": {
+            "description": "服务器内部错误",
+            "content": "application/json"
+          }
+        }
+      },
+      {
+        "path": "/api/voices",
+        "method": "GET",
+        "description": "获取可用的语音音色列表",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "成功返回音色列表",
+            "content": "application/json"
+          }
+        }
+      }
+    ]
+  },
+  "dependencies": {
+    "python": ">=3.9",
+    "packages": [
+      "Flask==2.3.3",
+      "Werkzeug==2.3.7",
+      "gunicorn==21.2.0"
+    ]
+  },
+  "deployment": {
+    "port": 5000,
+    "environment_variables": [
+      {
+        "name": "SECRET_ID",
+        "description": "腾讯云API密钥ID",
+        "required": false
+      },
+      {
+        "name": "SECRET_KEY",
+        "description": "腾讯云API密钥",
+        "required": false
+      },
+      {
+        "name": "TTS_HOST",
+        "description": "腾讯云TTS API主机地址",
+        "required": false,
+        "default": "tts.tencentcloudapi.com"
+      }
+    ]
+  }
+}

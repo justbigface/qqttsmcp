@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  tts-service:
+    build: .
+    container_name: tts-service
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./:/app
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+      # 可选：配置腾讯云API密钥
+      # - SECRET_ID=您的SecretId
+      # - SECRET_KEY=您的SecretKey
+      # 可选：使用Gunicorn作为WSGI服务器
+      # - USE_GUNICORN=true
+      # 可选：启用MCP服务模式
+      # - MCP_MODE=true

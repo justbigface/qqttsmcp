@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本转语音服务</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-size: 16px;
+        }
+        .voice-selection {
+            margin-bottom: 20px;
+        }
+        
+        .voice-selection label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .voice-selection select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: white;
+        }
+        
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #audioPlayer {
+            width: 100%;
+            margin-top: 20px;
+            display: none;
+        }
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .error {
+            color: #ff0000;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文本转语音服务</h1>
+        <textarea id="textInput" placeholder="请输入要转换的文本..."></textarea>
+        <div class="voice-selection">
+            <label for="voiceSelect">选择音色：</label>
+            <select id="voiceSelect" onchange="checkEmotionOptions()">
+                <option value="1001">智瑜 - 标准女声</option>
+                <option value="1002">智聆 - 标准女声</option>
+                <option value="1003">智美 - 标准女声</option>
+                <option value="1004">智云 - 标准男声</option>
+                <option value="1005">智莉 - 标准女声</option>
+                <option value="1008">智琪 - 标准女声</option>
+                <option value="1009">智芸 - 标准女声</option>
+                <option value="1010">智华 - 标准男声</option>
+                <option value="1017">智蓉 - 标准女声</option>
+                <option value="1018">智靖 - 标准男声</option>
+                <option value="1050">WeJack - 英文男声</option>
+                <option value="1051">WeRose - 英文女声</option>
+                <option value="10510000">智逍遥 - 标准男声</option>
+            </select>
+        </div>
+        <div id="emotionOptions" class="voice-selection" style="display: none;">
+            <label for="emotionSelect">选择情感：</label>
+            <select id="emotionSelect">
+                <option value="neutral">中性</option>
+                <option value="happy">高兴</option>
+                <option value="sad">悲伤</option>
+                <option value="angry">生气</option>
+                <option value="fear">恐惧</option>
+                <option value="news">新闻</option>
+                <option value="story">故事</option>
+                <option value="radio">广播</option>
+                <option value="poetry">诗歌</option>
+                <option value="call">客服</option>
+                <option value="sajiao">撒娇</option>
+                <option value="disgusted">厌恶</option>
+                <option value="amaze">震惊</option>
+                <option value="peaceful">平静</option>
+                <option value="exciting">兴奋</option>
+                <option value="aojiao">傲娇</option>
+                <option value="jieshuo">解说</option>
+            </select>
+        </div>
+        <button id="convertBtn" onclick="convertToSpeech()">转换为语音</button>
+        <audio id="audioPlayer" controls></audio>
+        <div id="status" class="status"></div>
+        <div id="error" class="error"></div>
+    </div>
+
+    <script>
+        // 检查是否需要显示情感选择
+        function checkEmotionOptions() {
+            const voiceType = document.getElementById('voiceSelect').value;
+            const emotionOptions = document.getElementById('emotionOptions');
+            
+            // 只有情感音色才显示情感选择
+            // 修复情感音色判断逻辑 - 1017和1018是情感音色
+            if (voiceType === '1017' || voiceType === '1018') {
+                emotionOptions.style.display = 'block';
+            } else {
+                emotionOptions.style.display = 'none';
+            }
+        }
+        
+        // 页面加载时检查一次
+        window.onload = function() {
+            checkEmotionOptions();
+        };
+        
+        function convertToSpeech() {
+            const text = document.getElementById('textInput').value.trim();
+            const voiceType = document.getElementById('voiceSelect').value;
+            const button = document.getElementById('convertBtn');
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+            const audioPlayer = document.getElementById('audioPlayer');
+
+            if (!text) {
+                error.textContent = '请输入要转换的文本';
+                return;
+            }
+
+            error.textContent = '';
+            status.textContent = '正在转换中...';
+            button.disabled = true;
+            audioPlayer.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('voice_type', voiceType);
+            
+            // 如果是情感音色，添加情感参数
+            if (voiceType === '1017' || voiceType === '1018') {
+                const emotion = document.getElementById('emotionSelect').value;
+                formData.append('emotion', emotion);
+            } else {
+                // 非情感音色默认使用中性情感
+                formData.append('emotion', 'neutral');
+            }
+
+            fetch('/synthesize', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // 检查响应类型
+                const contentType = response.headers.get('content-type');
+                if (!response.ok) {
+                    // 如果响应不成功，尝试解析错误信息
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json().then(errorData => {
+                            throw new Error(errorData.error || `服务器错误: ${response.status} ${response.statusText}`);
+                        });
+                    } else {
+                        throw new Error(`服务器错误: ${response.status} ${response.statusText}`);
+                    }
+                }
+                
+                // 检查内容类型是否为音频
+                if (contentType && contentType.includes('audio')) {
+                    return response.blob();
+                } else if (contentType && contentType.includes('application/json')) {
+                    // 如果返回的是JSON，可能是错误信息
+                    return response.json().then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        throw new Error('服务器返回了无效的响应格式');
+                    });
+                } else {
+                    throw new Error('服务器返回了无效的响应格式');
+                }
+            }).catch(err => {
+                if (err instanceof SyntaxError) {
+                    throw new Error('服务器返回了无效的响应格式');
+                }
+                throw err;
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                audioPlayer.src = url;
+                audioPlayer.style.display = 'block';
+                status.textContent = '转换完成';
+            })
+            .catch(err => {
+                console.error('合成错误:', err);
+                error.textContent = `错误：${err.message}`;
+                status.textContent = '转换失败';
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
